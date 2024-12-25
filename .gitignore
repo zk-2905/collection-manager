@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs
+*.log
+*.out
+*.err
+
+# Environment Variables
+.env
+
+# Virtual Environments
+venv/
+env/
+.venv/
+.conda/
+.venv/
+
+# IDE-specific files
+.idea/
+.vscode/
+*.iml
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Flask-specific files
+instance/
+*.sqlite3
+*.db
+
+# Node modules (if using Node.js for assets)
+node_modules/
+
+# Coverage and testing
+.coverage
+.cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
