@@ -6,15 +6,12 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 class Game:
-    """Game class to represent a single video game."""
     def __init__(self, title, genre, is_completed):
         self.title = title
         self.genre = genre
         self.is_completed = is_completed
 
 class CollectionManager:
-    """Manages the collection of games."""
-
     def __init__(self):
         self.games = []
 
@@ -57,11 +54,10 @@ class CollectionManager:
             pass
 
 class GameRecommender:
-    """Recommends games by scraping the Steam Top Sellers page."""
-
     @staticmethod
     def get_recommendations(genre):
-        tagids = {'action': 19, 'adventure': 21, 'racing': 9, 'rpg': 122, 'sports': 15}
+        games = []
+        tagids = {'action': 19, 'adventure': 21, 'racing': 9, 'rpg': 122, 'sports': 15} # steam genre id
         url = "https://store.steampowered.com/search/?filter=topsellers"
         response = requests.get(url)
 
@@ -69,7 +65,6 @@ class GameRecommender:
             return ["Unable to fetch recommendations at this time."]
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        games = []
 
         for game in soup.select(".search_result_row"):
             title = game.select_one(".title").text.strip()
@@ -91,9 +86,8 @@ class GameRecommender:
 
         return games if games else ["No recommendations found for this genre."]
 
-# Initialize collection manager and load games
-collection_manager = CollectionManager()
-collection_manager.load_games()
+collection_manager = CollectionManager() # create collection object
+collection_manager.load_games() # load previous data
 
 @app.route("/")
 def index():
@@ -107,9 +101,8 @@ def index():
 
     games = collection_manager.filter_games(genre=genre, completed=completed)
 
-    # Get recommendations if a specific genre is selected
     recommendations = []
-    if genre.lower() != "any":
+    if genre.lower() != "any": # only give recommendations when filtering a specific genre
         recommendations = GameRecommender.get_recommendations(genre)
         print(recommendations)
 
