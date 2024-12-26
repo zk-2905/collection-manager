@@ -1,25 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for
-import json, requests
+import json
+import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
 class Game:
+    """Game class to represent a single video game."""
     def __init__(self, title, genre, is_completed):
         self.title = title
         self.genre = genre
-        self.is_completed= is_completed
+        self.is_completed = is_completed
 
 class CollectionManager:
+    """Manages the collection of games."""
+
     def __init__(self):
         self.games = []
-    
-    def add_games(self,title, genre, is_completed):
+
+    def add_game(self, title, genre, is_completed):
         game = Game(title, genre, is_completed)
         self.games.append(game)
         self.save_games()
-    
-    def delete_games(self, title):
+
+    def delete_game(self, title):
         self.games = [game for game in self.games if game.title != title]
         self.save_games()
 
@@ -31,7 +35,7 @@ class CollectionManager:
                 game.is_completed = new_is_completed
                 self.save_games()
                 return
-    
+
     def filter_games(self, genre=None, completed=None):
         filtered = self.games
         if genre and genre.lower() != "any":
@@ -43,53 +47,58 @@ class CollectionManager:
     def save_games(self):
         with open("games.json", "w") as f:
             json.dump([game.__dict__ for game in self.games], f)
-    
+
     def load_games(self):
         try:
             with open("games.json", "r") as f:
                 games_data = json.load(f)
-                self.games = [Game(**games_data) for game_data in games_data]
+                self.games = [Game(**game_data) for game_data in games_data]
         except FileNotFoundError:
             pass
 
 class GameRecommender:
+    """Recommends games by scraping the Steam Top Sellers page."""
+
     @staticmethod
     def get_recommendations(genre):
-        games = []
         tagids = {'action': 19, 'adventure': 21, 'racing': 9, 'rpg': 122, 'sports': 15}
         url = "https://store.steampowered.com/search/?filter=topsellers"
         response = requests.get(url)
 
         if response.status_code != 200:
-            return ['Unable to fetch recommendations at this time.']
-        
+            return ["Unable to fetch recommendations at this time."]
+
         soup = BeautifulSoup(response.text, 'html.parser')
+        games = []
 
         for game in soup.select(".search_result_row"):
             title = game.select_one(".title").text.strip()
             game_genre = game.get("data-ds-tagids", "").lower()
             new_game_genre = []
-            number =''
+            number = ''
             for num in game_genre[1:-1]:
                 if num != ',':
                     number += num
-                elif num ==',':
+                elif num == ',':
                     new_game_genre.append(number)
-                    number =''
+                    number = ''
             for id in new_game_genre:
                 if tagids[genre] == int(id):
                     games.append(title)
-            if len(games) >= 5:
+
+            if len(games) >= 5:  # Limit to top 5 recommendations
                 break
+
         return games if games else ["No recommendations found for this genre."]
-    
+
+# Initialize collection manager and load games
 collection_manager = CollectionManager()
 collection_manager.load_games()
 
 @app.route("/")
 def index():
-    genre = requests.arg.get("genre", "any")
-    completed = requests.arg.get("completed", "any")
+    genre = request.args.get("genre", "any")
+    completed = request.args.get("completed", "any")
 
     if completed.lower() == "any":
         completed = None
@@ -98,10 +107,12 @@ def index():
 
     games = collection_manager.filter_games(genre=genre, completed=completed)
 
+    # Get recommendations if a specific genre is selected
     recommendations = []
     if genre.lower() != "any":
-        reccomdations = GameRecommender(genre)
-    
+        recommendations = GameRecommender.get_recommendations(genre)
+        print(recommendations)
+
     return render_template("index.html", games=games, genres=["any", "action", "adventure", "racing", "rpg", "sports"], recommendations=recommendations)
 
 @app.route("/add", methods=["POST"])
@@ -113,15 +124,16 @@ def add_game():
 
     if genre.lower() not in valid_genres:
         return redirect(url_for("index", error="Invalid genre"))
-    collection_manager.add_games(title, genre.title(), is_completed)
+    
+    collection_manager.add_game(title, genre.title(), is_completed)
     return redirect(url_for("index"))
 
-@app.route("/delete/<title>", method=["POST"])
+@app.route("/delete/<title>", methods=["POST"])
 def delete_game(title):
-    collection_manager.delete_games(title)
+    collection_manager.delete_game(title)
     return redirect(url_for("index"))
 
-@app.route("/edit/<title>", method=["POST"])
+@app.route("/edit/<title>", methods=["POST"])
 def edit_game(title):
     new_title = request.form.get("title")
     new_genre = request.form.get("genre")
@@ -130,7 +142,7 @@ def edit_game(title):
 
     if new_genre.lower() not in valid_genres:
         return redirect(url_for("index", error="Invalid genre"))
-    
+        
     collection_manager.edit_game(title, new_title, new_genre, new_is_completed)
     return redirect(url_for("index"))
 
