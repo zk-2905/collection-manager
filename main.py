@@ -106,7 +106,7 @@ def index():
         recommendations = GameRecommender.get_recommendations(genre)
         print(recommendations)
 
-    return render_template("index.html", games=games, genres=["any", "action", "adventure", "racing", "rpg", "sports"], recommendations=recommendations)
+    return render_template("index.html", games=games, genres=["action", "adventure", "racing", "rpg", "sports"], recommendations=recommendations)
 
 @app.route("/add", methods=["POST"])
 def add_game():
