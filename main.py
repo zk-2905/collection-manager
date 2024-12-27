@@ -65,16 +65,25 @@ class GameRecommender:
             return ["Unable to fetch recommendations at this time."]
 
         soup = BeautifulSoup(response.text, 'html.parser')
+        
 
         for game in soup.select(".search_result_row"):
             title = game.select_one(".title").text.strip()
             game_genre = game.get("data-ds-tagids", "").lower()
             new_game_genre = []
             number = ''
+            count = 0
+            final_num =len(game_genre[1:-1])
             for num in game_genre[1:-1]:
-                if num != ',':
+                count += 1
+                if num != ',' and count != final_num:
                     number += num
                 elif num == ',':
+                    new_game_genre.append(number)
+                    number = ''
+                elif count == final_num:
+                    count = 0
+                    number += num
                     new_game_genre.append(number)
                     number = ''
             for id in new_game_genre:
@@ -104,7 +113,6 @@ def index():
     recommendations = []
     if genre.lower() != "any": # only give recommendations when filtering a specific genre
         recommendations = GameRecommender.get_recommendations(genre)
-        print(recommendations)
 
     return render_template("index.html", games=games, genres=["action", "adventure", "racing", "rpg", "sports"], recommendations=recommendations)
 

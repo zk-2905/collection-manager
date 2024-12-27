@@ -50,3 +50,5 @@ build/
 dist/
 *.egg-info/
 .eggs/
+
+games.json
