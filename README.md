@@ -1,4 +1,4 @@
-# **collection-manager**
+# **Collection Manager Assignment**
 
 ## How to run the code
 
